@@ -274,7 +274,7 @@ if not st.session_state.logged_in:
 
 else:
     # User is logged in, display the main app or logged-in content
-    st.title(f"Hey! , {st.session_state.username}!")
+    st.title(f"Hey {st.session_state.username}!")
     st.write("You are now logged in and can access the full features of Linqify.")
 
     # Import and run the main application
