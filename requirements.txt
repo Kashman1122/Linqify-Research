@@ -4,4 +4,7 @@ langchain-google-genai
 langchain-community
 langchain-core
 requests
+fiass
+pickle
+concurrent
 bs4
