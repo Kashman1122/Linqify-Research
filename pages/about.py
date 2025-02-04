@@ -121,12 +121,13 @@ col1, col2, col3 = st.columns([1, 2, 1])
 
 with col2:
     st.markdown("""
-    <div class='feature-card' style='text-align: center; background-color:#020213;border: 1px solid #e0e0e0;'>
-        <p>Have questions or suggestions? We'd love to hear from you!</p>
-        <p>Email: contact@linqify.com</p>
-        <p>Twitter: @linqify</p>
-        <p>GitHub: github.com/linqify</p>
-    </div>
+    <div class="feature-card" style="text-align: center; background-color: #020213; border: 1px solid #e0e0e0; padding: 15px; color: #ffffff;">
+    <p>Have questions or suggestions? We'd love to hear from you!</p>
+    <p>Email: <a href="mailto:linqify@gmail.com" style="color: #1e90ff; text-decoration: none;">linqify@gmail.com</a></p>
+    <p>LinkedIn: <a href="https://www.linkedin.com/in/kashish-chopra-a55aa5245" target="_blank" style="color: #1e90ff; text-decoration: none;">Kashish Chopra</a></p>
+    <p>GitHub: <a href="https://github.com/Kashman1122" target="_blank" style="color: #1e90ff; text-decoration: none;">github.com/Kashman1122</a></p>
+</div>
+
     """, unsafe_allow_html=True)
 
 # Footer
