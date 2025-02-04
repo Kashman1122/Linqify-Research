@@ -177,10 +177,20 @@ def run():  # The run function that app.py will call
 
         for url in urls[:5]:  # Process only top 5 URLs
             try:
-                loader = WebBaseLoader(url)
-                docs = loader.load()
-                split_docs = text_splitter.split_documents(docs)
-                all_docs.extend(split_docs)
+                # Use requests.get to enforce timeout
+                response = requests.get(url, timeout=5)  # Timeout set to 5 seconds
+
+                if response.status_code == 200:
+                # Create a temporary loader with the fetched content
+                    loader = WebBaseLoader(url)
+                    docs = loader.load()  # Continue loading the content
+                    split_docs = text_splitter.split_documents(docs)
+                    all_docs.extend(split_docs)
+                else:
+                    st.warning(f"Failed to load URL: {url} - Status code: {response.status_code}")
+                
+            except requests.exceptions.Timeout:
+                st.warning(f"Timeout reached for URL: {url}. Skipping...")
             except Exception as e:
                 st.warning(f"Error processing URL {url}: {str(e)}")
 
@@ -189,7 +199,6 @@ def run():  # The run function that app.py will call
             vector_store = FAISS.from_documents(all_docs, embeddings)
             return vector_store
         return None
-
     # Button to fetch dataset and create vector store
     if st.button("Fetch Dataset and Create RAG"):
         if user_input.strip() != "":
