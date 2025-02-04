@@ -5,3 +5,6 @@ langchain-google-genai
 langchain-groq
 langchain-community
 bs4
+aiohttp
+asyncio
+google-cloud-aiplatform
