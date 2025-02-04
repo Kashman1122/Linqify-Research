@@ -137,16 +137,14 @@
 import streamlit as st
 import requests
 import re
+import time
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_groq import ChatGroq
 from langchain_community.vectorstores import FAISS
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
 import os
 
+# Load environment variables
 # Initialize LLM
 llm = ChatGroq(
     groq_api_key="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",  # Replace with your actual key if needed
@@ -206,52 +204,16 @@ def run():  # The run function that app.py will call
                             links = re.findall(r'https?://\S+', raw_text)
 
                             if links:
-                                st.session_state.current_links = links[:5] # Store in session state
+                                st.session_state.current_links = links[:5]  # Store in session state
                                 st.subheader("Processing Top 5 URLs:")
+                                for link in st.session_state.current_links:
+                                    st.markdown(f"- {link}")
 
-                                # Display links in resizable rectangle box
-                                st.markdown("""
-                                <style>
-                                .link-box {
-                                    border: 2px solid navy;
-                                    padding: 10px;
-                                    width: 100%;
-                                    max-width: 600px;
-                                    max-height: 400px;
-                                    overflow: auto;
-                                    resize: both;
-                                    display: flex;
-                                    flex-direction: column;
-                                }
-                                .link-item {
-                                    margin: 5px;
-                                }
-                                </style>
-                                """, unsafe_allow_html=True)
+                                # Wait for 5 seconds before proceeding with scraping
+                                time.sleep(5)
 
-                                # Display links inside a resizable box
-                                with st.container():
-                                    st.markdown('<div class="link-box">', unsafe_allow_html=True)
-                                    for link in st.session_state.current_links:
-                                        st.markdown(f'<div class="link-item"><a href="{link}" target="_blank">{link}</a></div>', unsafe_allow_html=True)
-                                    st.markdown('</div>', unsafe_allow_html=True)
-
-                                # User selects a link to scrape
-                                selected_link = st.selectbox("Select a link to scrape", st.session_state.current_links)
-
-                                if selected_link:
-                                    st.write(f"Scraping content from: {selected_link}")
-                                    # Scrape and display the selected link's content
-                                    try:
-                                        loader = WebBaseLoader(selected_link)
-                                        docs = loader.load()
-                                        st.write(f"Content scraped from {selected_link}:")
-                                        for doc in docs:
-                                            st.write(doc.page_content)
-                                    except Exception as e:
-                                        st.error(f"Error while scraping the link: {str(e)}")
-
-                                st.session_state.vector_store = process_urls(links) # Store in session state
+                                # Use the data to create the vector store (RAG)
+                                st.session_state.vector_store = process_urls(links)  # Store in session state
                                 if st.session_state.vector_store:
                                     st.success("RAG system created successfully!")
                             else:
@@ -263,7 +225,7 @@ def run():  # The run function that app.py will call
                         st.error(f"Error: {response.status_code}, {response.text}")
             except requests.exceptions.RequestException as e:  # Catch connection errors
                 st.error(f"Connection error: {str(e)}")
-            except Exception as e: # Catch any other exception
+            except Exception as e:  # Catch any other exception
                 st.error(f"An error occurred: {str(e)}")
         else:
             st.warning("Please enter a valid request to fetch the dataset.")
@@ -273,6 +235,45 @@ def run():  # The run function that app.py will call
         st.subheader("Current Dataset URLs:")
         for link in st.session_state.current_links:
             st.markdown(f"- {link}")
+
+    # Create a rectangle container for links and adjust size to screen
+    if st.session_state.current_links:
+        st.markdown(
+            """
+            <style>
+            .link-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                background-color: #f0f0f0;
+                padding: 10px;
+                border: 2px solid navy;
+                border-radius: 5px;
+                box-sizing: border-box;
+                overflow: hidden;
+                width: 100%;
+                height: auto;
+                max-width: 100%;
+            }
+            .link-item {
+                margin: 5px;
+                padding: 10px;
+                background-color: white;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 14px;
+                word-wrap: break-word;
+                flex: 1 1 200px; /* Ensures that links adjust based on screen size */
+                box-sizing: border-box;
+            }
+            </style>
+            """, unsafe_allow_html=True
+        )
+        
+        st.markdown('<div class="link-container">', unsafe_allow_html=True)
+        for link in st.session_state.current_links:
+            st.markdown(f'<div class="link-item">{link}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Question answering section (only if vector store exists in session state)
     if st.session_state.vector_store:
@@ -303,6 +304,6 @@ def run():  # The run function that app.py will call
                         response = retrieval_chain.invoke({'input': question})
                         st.write("Answer:", response['answer'])
                     except Exception as e:
-                        st.error(f"Error during answer generation: {e}") # Catch and display errors
+                        st.error(f"Error during answer generation: {e}")  # Catch and display errors
             else:
                 st.warning("Please enter a question.")
