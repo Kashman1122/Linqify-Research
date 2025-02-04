@@ -8,3 +8,4 @@ bs4
 aiohttp
 asyncio
 google-cloud-aiplatform
+sentence-transformers
