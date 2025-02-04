@@ -146,15 +146,8 @@ from langchain_community.vectorstores import FAISS
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
-from dotenv import load_dotenv
 import os
 
-# Load environment variables
-load_dotenv()
-
-# Configure API keys
-os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
-google_api_key = os.getenv('GOOGLE_API_KEY')
 
 # Initialize LLM
 llm = ChatGroq(
