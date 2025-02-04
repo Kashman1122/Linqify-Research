@@ -149,7 +149,6 @@ from langchain.chains import create_retrieval_chain
 import os
 
 # Load environment variables
-load_dotenv()
 
 # Configure API keys
 google_api_key = "AIzaSyAdAP8sWtGRVBJt4oW1ZThi18dJFwAOg98"
