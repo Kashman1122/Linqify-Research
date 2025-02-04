@@ -134,7 +134,6 @@
 #                 st.warning("Please enter a question.")
 
 
-# main_app.py
 import streamlit as st
 import requests
 import re
@@ -148,7 +147,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 import os
 
-# Load environment variables
 # Initialize LLM
 llm = ChatGroq(
     groq_api_key="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",  # Replace with your actual key if needed
@@ -210,8 +208,48 @@ def run():  # The run function that app.py will call
                             if links:
                                 st.session_state.current_links = links[:5] # Store in session state
                                 st.subheader("Processing Top 5 URLs:")
-                                for link in st.session_state.current_links:
-                                    st.markdown(f"- {link}")
+
+                                # Display links in resizable rectangle box
+                                st.markdown("""
+                                <style>
+                                .link-box {
+                                    border: 2px solid navy;
+                                    padding: 10px;
+                                    width: 100%;
+                                    max-width: 600px;
+                                    max-height: 400px;
+                                    overflow: auto;
+                                    resize: both;
+                                    display: flex;
+                                    flex-direction: column;
+                                }
+                                .link-item {
+                                    margin: 5px;
+                                }
+                                </style>
+                                """, unsafe_allow_html=True)
+
+                                # Display links inside a resizable box
+                                with st.container():
+                                    st.markdown('<div class="link-box">', unsafe_allow_html=True)
+                                    for link in st.session_state.current_links:
+                                        st.markdown(f'<div class="link-item"><a href="{link}" target="_blank">{link}</a></div>', unsafe_allow_html=True)
+                                    st.markdown('</div>', unsafe_allow_html=True)
+
+                                # User selects a link to scrape
+                                selected_link = st.selectbox("Select a link to scrape", st.session_state.current_links)
+
+                                if selected_link:
+                                    st.write(f"Scraping content from: {selected_link}")
+                                    # Scrape and display the selected link's content
+                                    try:
+                                        loader = WebBaseLoader(selected_link)
+                                        docs = loader.load()
+                                        st.write(f"Content scraped from {selected_link}:")
+                                        for doc in docs:
+                                            st.write(doc.page_content)
+                                    except Exception as e:
+                                        st.error(f"Error while scraping the link: {str(e)}")
 
                                 st.session_state.vector_store = process_urls(links) # Store in session state
                                 if st.session_state.vector_store:
@@ -268,4 +306,3 @@ def run():  # The run function that app.py will call
                         st.error(f"Error during answer generation: {e}") # Catch and display errors
             else:
                 st.warning("Please enter a question.")
-
