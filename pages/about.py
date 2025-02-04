@@ -20,6 +20,7 @@ st.markdown("""
         padding: 2rem;
         border-radius: 10px;
         margin-bottom: 2rem;
+        border: 1px solid #e0e0e0;
     }
     .feature-card {
         background-color: #020213;
@@ -120,7 +121,7 @@ col1, col2, col3 = st.columns([1, 2, 1])
 
 with col2:
     st.markdown("""
-    <div class='feature-card' style='text-align: center; background-color:#020213;'>
+    <div class='feature-card' style='text-align: center; background-color:#020213;border: 1px solid #e0e0e0;'>
         <p>Have questions or suggestions? We'd love to hear from you!</p>
         <p>Email: contact@linqify.com</p>
         <p>Twitter: @linqify</p>
@@ -130,7 +131,7 @@ with col2:
 
 # Footer
 st.markdown("""
-<div style='text-align: center; margin-top: 2rem; padding: 1rem; background-color: #020213; border-radius: 10px;'>
+<div style='text-align: center; margin-top: 2rem; padding: 1rem; background-color: #020213; border-radius: 10px;border: 1px solid #e0e0e0;'>
     <p>Linqify - Making Research Smarter</p>
     <p style='font-size: 0.8rem;'>© 2024 Linqify. All rights reserved.</p>
 </div>
