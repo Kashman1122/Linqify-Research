@@ -1,13 +1,8 @@
 streamlit
 requests
 faiss-cpu
-pickle5
 langchain
-langchain-core
 langchain-google-genai
 langchain-community
 langchain-groq
-tiktoken
-pydantic
 bs4
-html2text
