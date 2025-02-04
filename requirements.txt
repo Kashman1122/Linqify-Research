@@ -1,8 +1,10 @@
 streamlit
 requests
-faiss-cpu
+re # (This is the built-in Python regex module, no need to install it)
 langchain
 langchain-google-genai
-langchain-community
 langchain-groq
+langchain-community
+faiss-cpu # Or use faiss-gpu if needed
+python-dotenv
 bs4
