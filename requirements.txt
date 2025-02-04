@@ -7,4 +7,5 @@ requests
 fiass
 pickle
 concurrent
+functools
 bs4
