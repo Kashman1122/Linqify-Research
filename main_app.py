@@ -201,7 +201,7 @@ def run():  # The run function that app.py will call
                 st.warning(f"Error processing URL {url}: {str(e)}")
 
         if all_docs:
-            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")  # Ensure this path is correct
+            embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
             vector_store = FAISS.from_documents(all_docs, embeddings)
             return vector_store
         return None
