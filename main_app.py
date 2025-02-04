@@ -147,149 +147,117 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 import os
-import time
+import asyncio
+import aiohttp
+import concurrent.futures
+from functools import partial
 
 
+class OptimizedRAG:
+    def __init__(self):
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        self.llm = ChatGroq(
+            groq_api_key="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",
+            model_name="Gemma2-9b-it",
+            temperature=0.8,
+        )
 
-# Initialize session state
-def init_session_state():
-    if 'vector_store' not in st.session_state:
-        st.session_state.vector_store = None
-    if 'current_links' not in st.session_state:
-        st.session_state.current_links = []
-    if 'processing_complete' not in st.session_state:
-        st.session_state.processing_complete = False
-
-def create_llm():
-    return ChatGroq(
-        groq_api_key="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",
-        model_name="Gemma2-9b-it",
-        temperature=0.8,
-        retry_on_failure=True,
-        timeout=60
-    )
-
-def process_single_url(url, text_splitter):
-    try:
-        loader = WebBaseLoader(url)
-        docs = loader.load()
-        split_docs = text_splitter.split_documents(docs)
-        return split_docs
-    except Exception as e:
-        st.error(f"Error processing {url}: {str(e)}")
-        return []
-
-def process_urls(urls):
-    if not urls:
-        return None
-    
-    all_docs = []
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
-        length_function=len
-    )
-    
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
-    for idx, url in enumerate(urls[:5]):
-        status_text.text(f"Processing URL {idx + 1}/{min(5, len(urls))}")
-        docs = process_single_url(url, text_splitter)
-        all_docs.extend(docs)
-        progress_bar.progress((idx + 1) / min(5, len(urls)))
-        time.sleep(0.5)  # Prevent rate limiting
-    
-    if all_docs:
-        status_text.text("Creating embeddings...")
+    async def fetch_url(self, session, url):
         try:
-            embeddings = GoogleGenerativeAIEmbeddings(
-                model="models/embedding-001",
-                task_type="retrieval_query",
-                title="URL Content Embeddings"
-            )
-            vector_store = FAISS.from_documents(all_docs, embeddings)
-            status_text.text("RAG system ready!")
-            return vector_store
-    return None
+            async with session.get(url, timeout=10) as response:
+                if response.status == 200:
+                    content = await response.text()
+                    docs = self.text_splitter.split_text(content)
+                    return docs
+                return None
+        except Exception:
+            return None
+
+    async def process_urls_async(self, urls):
+        async with aiohttp.ClientSession() as session:
+            tasks = [self.fetch_url(session, url) for url in urls[:5]]
+            docs = await asyncio.gather(*tasks)
+            return [doc for doc in docs if doc]
+
+    def create_vector_store(self, docs):
+        if not docs:
+            return None
+        return FAISS.from_texts(docs, self.embeddings)
+
+def init_session_state():
+    for key in ['vector_store', 'current_links', 'processing_complete']:
+        if key not in st.session_state:
+            st.session_state[key] = None
 
 def run():
     st.title("Linqify")
     st.write("A Centralized RAG based Link Provider")
     
     init_session_state()
+    rag = OptimizedRAG()
     
     user_input = st.text_input("Enter your request for the dataset")
     
     if st.button("Fetch Dataset and Create RAG"):
-        if user_input.strip():
-            try:
-                url = "https://researcher-agent-df3x.onrender.com/process_dataset/"
-                with st.spinner("Fetching datasets..."):
-                    response = requests.post(
-                        url, 
-                        json={"input": user_input},
-                        timeout=30
-                    )
-                    
-                    if response.status_code == 200:
-                        response_json = response.json()
-                        if "result" in response_json:
-                            links = re.findall(r'https?://\S+', str(response_json["result"]))
-                            
-                            if links:
-                                st.session_state.current_links = links[:5]
-                                st.session_state.vector_store = process_urls(links)
-                                st.session_state.processing_complete = True
-                            else:
-                                st.warning("No valid links found in the response.")
-                    else:
-                        st.error("Failed to fetch datasets. Please try again.")
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
-        else:
+        if not user_input.strip():
             st.warning("Please enter a dataset request.")
-    
-    # Display current links
+            return
+
+        try:
+            with st.spinner("Processing..."):
+                response = requests.post(
+                    "https://researcher-agent-df3x.onrender.com/process_dataset/",
+                    json={"input": user_input},
+                    timeout=15
+                )
+                
+                if response.status_code != 200:
+                    st.error("Failed to fetch datasets")
+                    return
+                
+                links = re.findall(r'https?://\S+', str(response.json().get("result", "")))
+                if not links:
+                    st.warning("No valid links found")
+                    return
+                
+                st.session_state.current_links = links[:5]
+                
+                with st.spinner("Building RAG system..."):
+                    docs = asyncio.run(rag.process_urls_async(links[:5]))
+                    st.session_state.vector_store = rag.create_vector_store(docs)
+                    st.session_state.processing_complete = True
+                    st.success("RAG system ready!")
+
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+            return
+
     if st.session_state.current_links:
-        with st.expander("Current Dataset URLs", expanded=False):
+        with st.expander("Dataset URLs"):
             for link in st.session_state.current_links:
                 st.write(f"• {link}")
-    
-    # Question answering section
+
     if st.session_state.vector_store and st.session_state.processing_complete:
-        st.subheader("Ask Questions About the Dataset")
+        st.subheader("Ask Questions")
         
         prompt = ChatPromptTemplate.from_template("""
-        Answer the following question based only on the provided context.
-        If the answer cannot be found in the context, say so.
-        
-        Context: {context}
-        
+        Answer based on context only: {context}
         Question: {input}
         """)
         
-        llm = create_llm()
-        document_chain = create_stuff_documents_chain(llm, prompt)
-        retriever = st.session_state.vector_store.as_retriever(
-            search_type="mmr",
-            search_kwargs={"k": 5, "fetch_k": 8}
+        document_chain = create_stuff_documents_chain(rag.llm, prompt)
+        retrieval_chain = create_retrieval_chain(
+            st.session_state.vector_store.as_retriever(search_kwargs={"k": 3}),
+            document_chain
         )
-        retrieval_chain = create_retrieval_chain(retriever, document_chain)
         
         question = st.text_input("Enter your question:")
         
-        if st.button("Get Answer"):
-            if question.strip():
-                try:
-                    with st.spinner("Generating answer..."):
-                        response = retrieval_chain.invoke({
-                            'input': question,
-                            'context_window': 4000
-                        })
-                        st.write("Answer:", response['answer'])
-                except Exception as e:
-                    st.error(f"Error generating answer: {str(e)}")
-                    st.session_state.processing_complete = False  # Reset on error
-            else:
-                st.warning("Please enter a question.")
+        if st.button("Get Answer") and question.strip():
+            try:
+                with st.spinner("Generating answer..."):
+                    response = retrieval_chain.invoke({'input': question})
+                    st.write("Answer:", response['answer'])
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
