@@ -194,7 +194,11 @@ def run():
                     if response.status_code == 200:
                         links = re.findall(r'https?://\S+', str(response.json().get("result", "")))
                         if links:
-                            st.session_state.current_links = links[:5]
+                            st.session_state.current_links = links[:5] # Store in session state
+                            st.subheader("Processing Top 5 URLs:")
+                            for link in st.session_state.current_links:
+                                st.markdown(f"- {link}")
+
                             st.session_state.vector_store = process_urls(links)
                             if st.session_state.vector_store:
                                 st.success("RAG system ready!")
