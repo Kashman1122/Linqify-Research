@@ -179,7 +179,7 @@ def run():  # The run function that app.py will call
         all_docs = []
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=20)
 
-        for url in urls[:5]:  # Process only top 5 URLs
+        for url in urls[:1]:  # Process only top 5 URLs
             try:
                 loader = WebBaseLoader(url)
                 docs = loader.load()
