@@ -134,14 +134,18 @@
 #                 st.warning("Please enter a question.")
 
 
+# main_app.py
 import streamlit as st
 import requests
 import re
-import time
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_groq import ChatGroq
 from langchain_community.vectorstores import FAISS
+from langchain.prompts import ChatPromptTemplate
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
 import os
 
 # Load environment variables
