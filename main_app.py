@@ -146,9 +146,16 @@ from langchain_community.vectorstores import FAISS
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
+from dotenv import load_dotenv
 import os
-import time
+
 # Load environment variables
+load_dotenv()
+
+# Configure API keys
+os.environ['GOOGLE_API_KEY'] = os.getenv('GOOGLE_API_KEY')
+google_api_key = os.getenv('GOOGLE_API_KEY')
+
 # Initialize LLM
 llm = ChatGroq(
     groq_api_key="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",  # Replace with your actual key if needed
@@ -177,20 +184,10 @@ def run():  # The run function that app.py will call
 
         for url in urls[:5]:  # Process only top 5 URLs
             try:
-                # Use requests.get to enforce timeout
-                response = requests.get(url, timeout=5)  # Timeout set to 5 seconds
-
-                if response.status_code == 200:
-                # Create a temporary loader with the fetched content
-                    loader = WebBaseLoader(url)
-                    docs = loader.load()  # Continue loading the content
-                    split_docs = text_splitter.split_documents(docs)
-                    all_docs.extend(split_docs)
-                else:
-                    st.warning(f"Failed to load URL: {url} - Status code: {response.status_code}")
-                
-            except requests.exceptions.Timeout:
-                st.warning(f"Timeout reached for URL: {url}. Skipping...")
+                loader = WebBaseLoader(url)
+                docs = loader.load()
+                split_docs = text_splitter.split_documents(docs)
+                all_docs.extend(split_docs)
             except Exception as e:
                 st.warning(f"Error processing URL {url}: {str(e)}")
 
@@ -199,6 +196,7 @@ def run():  # The run function that app.py will call
             vector_store = FAISS.from_documents(all_docs, embeddings)
             return vector_store
         return None
+
     # Button to fetch dataset and create vector store
     if st.button("Fetch Dataset and Create RAG"):
         if user_input.strip() != "":
@@ -217,16 +215,12 @@ def run():  # The run function that app.py will call
                             links = re.findall(r'https?://\S+', raw_text)
 
                             if links:
-                                st.session_state.current_links = links[:5]  # Store in session state
+                                st.session_state.current_links = links[:5] # Store in session state
                                 st.subheader("Processing Top 5 URLs:")
                                 for link in st.session_state.current_links:
                                     st.markdown(f"- {link}")
 
-                                # Wait for 5 seconds before proceeding with scraping
-                                time.sleep(5)
-
-                                # Use the data to create the vector store (RAG)
-                                st.session_state.vector_store = process_urls(links)  # Store in session state
+                                st.session_state.vector_store = process_urls(links) # Store in session state
                                 if st.session_state.vector_store:
                                     st.success("RAG system created successfully!")
                             else:
@@ -238,7 +232,7 @@ def run():  # The run function that app.py will call
                         st.error(f"Error: {response.status_code}, {response.text}")
             except requests.exceptions.RequestException as e:  # Catch connection errors
                 st.error(f"Connection error: {str(e)}")
-            except Exception as e:  # Catch any other exception
+            except Exception as e: # Catch any other exception
                 st.error(f"An error occurred: {str(e)}")
         else:
             st.warning("Please enter a valid request to fetch the dataset.")
@@ -248,45 +242,6 @@ def run():  # The run function that app.py will call
         st.subheader("Current Dataset URLs:")
         for link in st.session_state.current_links:
             st.markdown(f"- {link}")
-
-    # Create a rectangle container for links and adjust size to screen
-    if st.session_state.current_links:
-        st.markdown(
-            """
-            <style>
-            .link-container {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                background-color: #f0f0f0;
-                padding: 10px;
-                border: 2px solid navy;
-                border-radius: 5px;
-                box-sizing: border-box;
-                overflow: hidden;
-                width: 100%;
-                height: auto;
-                max-width: 100%;
-            }
-            .link-item {
-                margin: 5px;
-                padding: 10px;
-                background-color: white;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                font-size: 14px;
-                word-wrap: break-word;
-                flex: 1 1 200px; /* Ensures that links adjust based on screen size */
-                box-sizing: border-box;
-            }
-            </style>
-            """, unsafe_allow_html=True
-        )
-        
-        st.markdown('<div class="link-container">', unsafe_allow_html=True)
-        for link in st.session_state.current_links:
-            st.markdown(f'<div class="link-item">{link}</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # Question answering section (only if vector store exists in session state)
     if st.session_state.vector_store:
@@ -317,6 +272,6 @@ def run():  # The run function that app.py will call
                         response = retrieval_chain.invoke({'input': question})
                         st.write("Answer:", response['answer'])
                     except Exception as e:
-                        st.error(f"Error during answer generation: {e}")  # Catch and display errors
+                        st.error(f"Error during answer generation: {e}") # Catch and display errors
             else:
                 st.warning("Please enter a question.")
