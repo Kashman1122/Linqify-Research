@@ -217,7 +217,8 @@
 import streamlit as st
 import requests
 import re
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+# from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_groq import ChatGroq
@@ -305,7 +306,7 @@ def run():
                     st.warning(f"Error processing PDF {pdf.name}: {str(e)}")
 
         if all_docs:
-            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+            embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
             return FAISS.from_documents(all_docs, embeddings)
         return None
 
