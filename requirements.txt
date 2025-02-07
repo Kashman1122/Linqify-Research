@@ -7,3 +7,4 @@ langchain-community
 bs4
 faiss-cpu
 sentence-transformers
+pypdf
