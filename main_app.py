@@ -260,7 +260,7 @@ load_dotenv()
 google_api_key = os.getenv('GOOGLE_API_KEY')
 
 llm = ChatGroq(
-    groq_api_key="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",
+    groq_api_key="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",
     model_name="Gemma2-9b-it",
     temperature=0.8,
 )
@@ -378,7 +378,7 @@ def run():
 
         Question: {input}
         """)
-
+f
         document_chain = create_stuff_documents_chain(llm, prompt)
         retrieval = st.session_state.vector_store.as_retriever()
         retrieval_chain = create_retrieval_chain(retrieval, document_chain)
