@@ -378,7 +378,7 @@ def run():
 
         Question: {input}
         """)
-f
+
         document_chain = create_stuff_documents_chain(llm, prompt)
         retrieval = st.session_state.vector_store.as_retriever()
         retrieval_chain = create_retrieval_chain(retrieval, document_chain)
