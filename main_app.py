@@ -260,7 +260,7 @@ load_dotenv()
 google_api_key = os.getenv('GOOGLE_API_KEY')
 
 llm = ChatGroq(
-    groq_api_key="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",
+    groq_api_key="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",
     model_name="Gemma2-9b-it",
     temperature=0.8,
 )
